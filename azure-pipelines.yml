@@ -1,0 +1,43 @@
+#Rafael opening task
+#step 3 prints the following analytics: total files scanned, fail/pass count and ratio, file with most occurences of ERROR
+
+schedules:
+- cron: '0 4 * * Sun-Thu' #07:00 in Israeli time
+  displayName: Morning dev check
+  branches:
+   include: 
+    - '*dev*'
+
+pool:
+  vmImage: ubuntu-latest #might be redundant from my understanding
+
+steps:
+- script: echo "Hello world! Have a good day" #step 1/3
+- task: bash@3 #steps 2/3 and 3/3
+  inputs:
+    targetType: inline
+    script: |
+      file_count=0
+      fail_count=0
+      highest_error=0
+      for file in $(find . -name "*log")
+      do
+        ((file_count++))
+        if grep -q "ERROR" "$file"; then
+          echo "FAIL"
+          ((fail_count++))
+        else
+          echo "PASS"
+        fi
+        error_count=$(grep -c "ERROR" "$file")
+        if (($error_count>$highest_error)); then
+          highest_error=$error_count
+          problem_file=$file
+        fi
+      done
+      echo "Total files scanned  $file_count"
+      echo "Total of fails  $fail_count"
+      echo "Percentile of fails  $((($fail_count/$file_count)*100)) %"
+      echo "Total of passes  $(($file_count-$fail_count))"
+      echo "Percentile of passes  $(((($file_count-$fail_count)/$file_count)*100)) %"
+      echo "The most problematic file is $problem_file with $highest_error ERRORs"
